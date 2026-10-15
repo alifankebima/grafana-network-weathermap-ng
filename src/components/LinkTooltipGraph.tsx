@@ -72,14 +72,24 @@ export const LinkTooltipGraph = memo(function LinkTooltipGraph({
         if (!timeField || timeField === field) {
           continue;
         }
+        // Grafana's <TimeSeries> and uPlot pipeline (outerJoinDataFrames / getFieldDisplayName)
+        // mutate field.state in-place on whatever field objects are passed to it.
+        // If the shared fields from data.series are passed directly, TimeSeries recomputes
+        // and overwrites field.state.displayName in the context of the slim 1- or 2-frame
+        // tooltip subset (where frame disambiguation rules differ from the full panel series).
+        // This mutates data.series, causing subsequent hovers to fail to match queryA/queryZ.
+        // Stripping `state` ensures TimeSeries operates on isolated field copies.
         filteredGraphSeries.push({
           frame: {
             ...frame,
             fields: [
               timeField.type === FieldType.time
-                ? timeField
-                : { ...timeField, type: FieldType.time, display: undefined },
-              field,
+                ? { ...timeField, state: undefined }
+                : { ...timeField, type: FieldType.time, display: undefined, state: undefined },
+              {
+                ...field,
+                state: undefined,
+              },
             ],
           },
           isInbound: name === queryZ,
@@ -102,11 +112,12 @@ export const LinkTooltipGraph = memo(function LinkTooltipGraph({
         frames={filteredGraphSeries.map(({ frame, isInbound }) => {
           const lineColor = isInbound ? settings.inboundColor : settings.outboundColor;
           // Spread each field to avoid mutating the original frame stored in data.series.
-          // Mutating originals causes stale colors on subsequent renders.
+          // Mutating originals causes stale colors and corrupted display names on subsequent renders.
           return {
             ...frame,
             fields: frame.fields.map((f) => ({
               ...f,
+              state: undefined,
               config: {
                 ...f.config,
                 custom: {
