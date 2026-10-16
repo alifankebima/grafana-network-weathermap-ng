@@ -72,24 +72,14 @@ export const LinkTooltipGraph = memo(function LinkTooltipGraph({
         if (!timeField || timeField === field) {
           continue;
         }
-        // Grafana's <TimeSeries> and uPlot pipeline (outerJoinDataFrames / getFieldDisplayName)
-        // mutate field.state in-place on whatever field objects are passed to it.
-        // If the shared fields from data.series are passed directly, TimeSeries recomputes
-        // and overwrites field.state.displayName in the context of the slim 1- or 2-frame
-        // tooltip subset (where frame disambiguation rules differ from the full panel series).
-        // This mutates data.series, causing subsequent hovers to fail to match queryA/queryZ.
-        // Stripping `state` ensures TimeSeries operates on isolated field copies.
         filteredGraphSeries.push({
           frame: {
             ...frame,
             fields: [
               timeField.type === FieldType.time
-                ? { ...timeField, state: undefined }
-                : { ...timeField, type: FieldType.time, display: undefined, state: undefined },
-              {
-                ...field,
-                state: undefined,
-              },
+                ? timeField
+                : { ...timeField, type: FieldType.time, display: undefined },
+              field,
             ],
           },
           isInbound: name === queryZ,
@@ -111,8 +101,11 @@ export const LinkTooltipGraph = memo(function LinkTooltipGraph({
         timeZone={timeZone}
         frames={filteredGraphSeries.map(({ frame, isInbound }) => {
           const lineColor = isInbound ? settings.inboundColor : settings.outboundColor;
-          // Spread each field to avoid mutating the original frame stored in data.series.
-          // Mutating originals causes stale colors and corrupted display names on subsequent renders.
+          // Spread each field and drop its `state` so <TimeSeries> never writes into
+          // data.series. A plain spread still shares the state object, and Grafana's
+          // outerJoinDataFrames deletes and recomputes state.displayName against only
+          // the tooltip's frames. That corrupted the cached names used by the next
+          // hover's queryA/queryZ match, node status and link values (#375, #377).
           return {
             ...frame,
             fields: frame.fields.map((f) => ({

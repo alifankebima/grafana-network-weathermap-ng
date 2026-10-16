@@ -55,10 +55,7 @@ describe('LinkTooltipGraph', () => {
       { displayName: 'Traffic value router-a: 10104', multipleFrames: true },
       { displayName: 'Traffic value router-a: 10105', multipleFrames: true },
     ];
-    const expectedOtherFrameStates = [
-      undefined,
-      { displayName: 'Link Status value status', multipleFrames: true },
-    ];
+    const expectedOtherFrameStates = [undefined, { displayName: 'Link Status value status', multipleFrames: true }];
 
     const timeSeriesSpy = jest.spyOn(grafanaUi, 'TimeSeries');
 
@@ -74,16 +71,12 @@ describe('LinkTooltipGraph', () => {
         const { frames } = timeSeriesSpy.mock.calls[cycle - 1][0];
         expect(frames).toHaveLength(2);
 
-        const inboundFrame = frames.find((f) =>
-          f.fields.some((field) => field.labels?.metric === 'router-a: 10104')
-        );
+        const inboundFrame = frames.find((f) => f.fields.some((field) => field.labels?.metric === 'router-a: 10104'));
         expect(inboundFrame).toBeDefined();
         const inboundValueField = inboundFrame?.fields.find((field) => field.name === 'value');
         expect(inboundValueField?.config?.custom?.lineColor).toBe(defaultProps.settings.inboundColor);
 
-        const outboundFrame = frames.find((f) =>
-          f.fields.some((field) => field.labels?.metric === 'router-a: 10105')
-        );
+        const outboundFrame = frames.find((f) => f.fields.some((field) => field.labels?.metric === 'router-a: 10105'));
         expect(outboundFrame).toBeDefined();
         const outboundValueField = outboundFrame?.fields.find((field) => field.name === 'value');
         expect(outboundValueField?.config?.custom?.lineColor).toBe(defaultProps.settings.outboundColor);
