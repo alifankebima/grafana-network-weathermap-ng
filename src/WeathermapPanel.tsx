@@ -39,6 +39,7 @@ import {
   calculateRectangleAutoHeight,
   needsMigration,
   getValueSeries,
+  formatValueText,
   handleVersionedStateUpdates,
   resolveLinkChain,
   spreadLabels,
@@ -541,7 +542,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
 
           // Get the text formatted to KiB/MiB/etc.
           let scaledSideValue = linkValueFormatter(toReturn.sides[side].currentValue, linkDecimals);
-          toReturn.sides[side].currentValueText = `${scaledSideValue.text} ${scaledSideValue.suffix}`;
+          toReturn.sides[side].currentValueText = formatValueText(scaledSideValue);
 
           // Get the percentage througput text
           toReturn.sides[side].currentPercentageText =
@@ -559,7 +560,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
       }
 
       let scaledBandwidth = linkValueFormatter(toReturn.sides[side].bandwidth, linkDecimals);
-      toReturn.sides[side].currentBandwidthText = `${scaledBandwidth.text} ${scaledBandwidth.suffix}`;
+      toReturn.sides[side].currentBandwidthText = formatValueText(scaledBandwidth);
     }
 
     // Calculate positions for links and arrow polygons. Not included above to help with typing.
@@ -1322,8 +1323,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
                   const outboundVal = metric.queryZ ? rawFrameMap.get(metric.queryZ) : undefined;
                   const fmtVal = (v: number | undefined) => {
                     if (v === undefined) { return 'n/a'; }
-                    const r = fmt(v, linkDecimals);
-                    return `${r.text} ${r.suffix}`.trim();
+                    return formatValueText(fmt(v, linkDecimals));
                   };
                   const parts: string[] = [];
                   if (metric.queryA !== undefined && metric.queryA !== '') {
@@ -1399,8 +1399,7 @@ export const WeathermapPanel: React.FC<PanelProps<SimpleOptions>> = (props: Pane
               const raw = metric.query ? rawFrameMap.get(metric.query) : undefined;
               let valueText = 'n/a';
               if (raw !== undefined) {
-                const formatted = fmt(raw, wm.settings.link.linkDecimals);
-                valueText = `${formatted.text} ${formatted.suffix}`.trim();
+                valueText = formatValueText(fmt(raw, wm.settings.link.linkDecimals));
               }
               return (
                 <div key={idx} style={{ fontSize: wm.settings.tooltip.fontSize }}>
